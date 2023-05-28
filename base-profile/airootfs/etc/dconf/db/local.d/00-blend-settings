@@ -1,0 +1,30 @@
+[org/gnome/shell]
+favorite-apps = ['firefox.desktop', 'org.gnome.Calendar.desktop', 'org.gnome.Music.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Software.desktop', 'al.getcryst.jadegui.desktop']
+enabled-extensions = ['blur-my-shell@aunetx', 'appindicatorsupport@rgcjonas.gmail.com']
+
+[org/gnome/Epiphany]
+default-search-engine = 'Google'
+search-engines = [('DuckDuckGo', 'https://duckduckgo.com/?q=%s', '!ddg'), ('Google', 'https://www.google.com/search?q=%s', '!g'), ('Bing', 'https://www.bing.com/search?q=%s', '!b')]
+
+[org/gnome/shell/extensions/blur-my-shell]
+sigma = 63
+color = (0.0, 0.0, 0.0, 0.36666667461395264)
+
+[org/gnome/desktop/background]
+picture-uri = 'file:///usr/local/share/backgrounds/blend/blend-light.png'
+picture-uri-dark = 'file:///usr/local/share/backgrounds/blend/blend-dark.png'
+show-desktop-icons = true   
+
+[org/gnome/desktop/interface]
+gtk-theme = 'adw-gtk3'
+
+[org/gnome/desktop/wm/preferences]
+button-layout = ':minimize,maximize,close'
+action-middle-click-titlebar = 'lower'
+
+[org/gnome/desktop/wm/keybindings]
+show-desktop = ['<Primary><Super>d','<Primary><Alt>d','<Super>d']
+switch-applications = ['<Super>Tab']
+switch-windows = ['<Alt>Tab']
+switch-applications-backward = ['<Shift><Super>Tab']
+switch-windows-backward = ['<Shift><Alt>Tab']

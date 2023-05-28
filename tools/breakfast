@@ -1,0 +1,199 @@
+#!/usr/bin/env python3
+
+import os
+import glob
+import shutil
+import fileinput
+import subprocess
+import configparser
+
+# Depedendent packages (depend on projects)
+
+dpkg_list = [
+    'akshara',
+    'blend',
+    'blend-web-store',
+    'blendos-first-setup',
+    'jade-gui'
+]
+
+# blendOS independent packages
+
+iblend_list = [
+    'blend-inst',
+    'blend-keyring',
+    'filesystem-blend',
+    'grub-blend',
+    'lsb-release-blend',
+    'plymouth',
+    'waydroid-blend'
+]
+
+# AUR packages
+
+aur_list = [
+    'adw-gtk3',
+    'python-gbinder',
+    'libglibutil',
+    'libgbinder',
+    'waydroid-image',
+    'gnome-shell-extension-dash-to-dock',
+    'gnome-shell-extension-blur-my-shell',
+    'gnome-shell-extension-appindicator'
+]
+
+# Combined independent package list
+
+ipkg_list = iblend_list + aur_list
+
+# Complete package list
+
+pkg_list = ipkg_list + dpkg_list
+
+if not os.path.isfile('.assemble/config.ini'):
+    print('breakfast must be run from the directory containing the Assemble repository.')
+
+for pkg in pkg_list:
+    subprocess.run(['git', 'clean', '-xdf'], cwd=f'packages/{pkg}')
+    subprocess.run(['git', 'reset', '--hard', 'HEAD'], cwd=f'packages/{pkg}')
+
+for dpkg in dpkg_list:
+    with fileinput.FileInput(f'packages/{dpkg}/PKGBUILD', inplace=True, backup='.bak') as file:
+        for line in file:
+            print(line.replace('[BASE_ASSEMBLE_PATH]', os.getcwd()), end='')
+
+###################################################
+
+# Build all updated packages
+
+
+def build_pkg(pkg: str):
+    subprocess.run(['makepkg', '-csi', '--noconfirm'], cwd=f'packages/{pkg}').returncode
+
+    if len(glob.glob(f'packages/{pkg}/*.pkg.*')) == 0:
+        return True
+
+    return False
+
+
+latest_commits = configparser.ConfigParser()
+latest_commits.read('.assemble/latest_commits')
+
+if os.path.isfile('.assemble/last_build_commits'):
+    try:
+        last_build_commits_ini = configparser.ConfigParser()
+        last_build_commits_ini.read('.assemble/last_build_commits')
+
+        last_build_commits = []
+
+        for dpkg in dpkg_list:
+            if f'projects/{dpkg}' in last_build_commits_ini['commits'].keys():
+                last_build_commits.append(
+                    (f'projects/{dpkg}', last_build_commits_ini['commits'][f'projects/{dpkg}']))
+            if f'packages/{dpkg}' in last_build_commits_ini['commits'].keys():
+                last_build_commits.append(
+                    (f'packages/{dpkg}', last_build_commits_ini['commits'][f'packages/{dpkg}']))
+
+        for ipkg in ipkg_list:
+            if f'packages/{ipkg}' in last_build_commits_ini['commits'].keys():
+                last_build_commits.append(
+                    (f'packages/{ipkg}', last_build_commits_ini['commits'][f'packages/{ipkg}']))
+    except:
+        last_build_commits = []
+else:
+    last_build_commits = []
+
+dpkg_list_building = []
+pkg_list_building = []
+
+for dpkg in dpkg_list:
+    if f'projects/{dpkg}' not in [x[0] for x in last_build_commits]:
+        last_build_commits.append((f'projects/{dpkg}', ''))
+    if f'packages/{dpkg}' not in [x[0] for x in last_build_commits]:
+        last_build_commits.append((f'packages/{dpkg}', ''))
+
+for ipkg in ipkg_list:
+    if f'packages/{ipkg}' not in [x[0] for x in last_build_commits]:
+        last_build_commits.append((f'packages/{ipkg}', ''))
+
+for path, id in last_build_commits:
+    if latest_commits['commits'][path] != id:
+        if path.startswith('projects/'):
+            if os.path.basename(path) not in pkg_list_building:
+                dpkg_list_building.append(os.path.basename(path))
+                pkg_list_building.append(os.path.basename(path))
+        else:
+            if os.path.basename(path) not in pkg_list_building:
+                pkg_list_building.append(os.path.basename(path))
+
+failed_builds = []
+successful_builds = []
+
+for pkg in pkg_list_building:
+    if build_pkg(pkg):
+        failed_builds.append(pkg)
+        continue
+    else:
+        successful_builds.append(pkg)
+    if not os.path.isdir('packages-out'):
+        os.mkdir('packages-out')
+    for pkg_file in glob.glob(f'packages/{pkg}/*.pkg.*'):
+        if os.path.isfile(os.path.join('packages-out', os.path.basename(pkg_file))):
+            os.remove(os.path.join('packages-out', os.path.basename(pkg_file)))
+        shutil.move(pkg_file, 'packages-out')
+
+
+if len(successful_builds) != 0:
+    try:
+        old_commits = configparser.ConfigParser()
+        old_commits.read('.assemble/last_build_commits')
+        for pkg in successful_builds:
+            commit = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=f'packages/{pkg}',
+                                        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).stdout.decode().strip()
+            old_commits['commits'][f'packages/{pkg}'] = commit
+            if pkg in dpkg_list_building:
+                commit = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=f'projects/{pkg}',
+                                        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).stdout.decode().strip()
+                old_commits['commits'][f'projects/{pkg}'] = commit
+        with open('.assemble/last_build_commits', 'w') as last_build_commits:
+            old_commits.write(last_build_commits)
+    except:
+        with open('.assemble/last_build_commits', 'w') as last_build_commits:
+            config = configparser.ConfigParser()
+            commits_dict = {}
+            for pkg in successful_builds:
+                commit = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=f'packages/{pkg}',
+                                        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).stdout.decode().strip()
+                commits_dict[f'packages/{pkg}'] = commit
+            for dpkg in dpkg_list_building:
+                if dpkg in successful_builds:
+                    commit = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=f'projects/{dpkg}',
+                                            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).stdout.decode().strip()
+                    commits_dict[f'projects/{dpkg}'] = commit
+            config['commits'] = commits_dict
+            config.write(last_build_commits)
+
+
+if len(successful_builds) != 0:
+    pkg_list = [os.path.basename(x) for x in glob.glob(f'packages-out/*.pkg.*')]
+    if os.path.isfile('packages-out/breakfast.db.tar.gz'):
+        os.remove('packages-out/breakfast.db.tar.gz')
+    if os.path.isfile('packages-out/breakfast.files.tar.gz'):
+        os.remove('packages-out/breakfast.files.tar.gz')
+    subprocess.run(['repo-add', 'breakfast.db.tar.gz', *pkg_list], cwd=f'packages-out')
+
+print()
+print('===================================')
+print()
+if len(failed_builds) == 0:
+    print('All package builds were successful.')
+    print()
+    print('Run brunch to build a bootable ISO.')
+else:
+    print('Successful package builds:')
+    for b in successful_builds:
+        print(f' -> {b}')
+    print()
+    print('Failed package builds:')
+    for b in failed_builds:
+        print(f' -> {b}')

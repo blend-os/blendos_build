@@ -1,0 +1,3 @@
+#!/bin/bash
+
+echo 'Create an Arch container from the blendOS Settings app.'

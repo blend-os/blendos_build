@@ -1,0 +1,3 @@
+#!/bin/bash
+
+echo 'Create a Fedora container from the blendOS Settings app.'

@@ -1,0 +1,156 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import time
+import shutil
+import datetime
+import subprocess
+
+import xml.etree.ElementTree as ET
+
+# Get list of profiles
+
+profiles = {}
+
+server_url = 'https://images.blendos.co'
+
+if not os.geteuid() == 0:
+    print('brunch must be run as root.')
+    exit(1)
+
+if not os.path.isfile('.assemble/manifests/default.xml'):
+    print('brunch must be run from the directory containing the Assemble repository.')
+    exit(1)
+
+if not os.path.isdir('packages-out'):
+    print('You must eat your breakfast first.')
+    exit(1)
+
+tree = ET.parse('.assemble/manifests/default.xml')
+root = tree.getroot()
+
+for el in root.iter():
+    if el.tag == 'profile':
+        pkgs = []
+
+        # Get list of packages
+        for _el in el.iter():
+            if _el.tag == 'pkg':
+                pkgs.append(_el.text)
+
+        profiles[el.attrib['name']] = {
+            'dm': el.attrib['dm'],
+            'pkgs': pkgs
+        }
+
+selected_profile_name = ''
+
+try:
+    if sys.argv[1] in profiles.keys():
+        selected_profile_name = sys.argv[1]
+    else:
+        print(f'{sys.argv[1]} is not a valid profile.')
+        print()
+        print(f'Available build profiles: {" ".join(profiles.keys())}')
+        exit(1)
+except IndexError:
+    print('Available build profiles:')
+    print()
+    for i, p in enumerate(profiles.keys()):
+        print(f'{i}. {p}')
+    print()
+    while True:
+        selection = input(f'Select a profile [0/{list(profiles.keys())[0]}]: ').strip()
+        if selection == '':
+            selected_profile_name = list(profiles.keys())[0]
+            print()
+            break
+        elif selection.isdigit():
+            if int(selection) < len(profiles):
+                selected_profile_name = list(profiles.keys())[int(selection)]
+                print()
+                break
+            else:
+                print('No such profile exists.')
+                print()
+        else:
+            if selection in profiles:
+                selected_profile_name = selection
+                print()
+                break
+            else:
+                print('No such profile exists.')
+                print()
+
+print(f'Building {selected_profile_name}.')
+print()
+
+sprofile = profiles[selected_profile_name]
+
+if os.path.isdir(f".brunch-tmp"):
+    shutil.rmtree(f".brunch-tmp")
+
+subprocess.run(['cp', '-r', 'build/base-profile', '.brunch-tmp'])
+
+with open(f'.brunch-tmp/packages.x86_64', 'a') as packages_file:
+    packages_file.write('\n' + '\n'.join(sprofile["pkgs"]) + '\n')
+
+with open(f'.brunch-tmp/airootfs/etc/blend_release', 'w') as blend_release_file:
+    blend_release_file.write(f'track: {selected_profile_name}\ncurrent: {int(time.time())}\nserver: {server_url}\n')
+
+pacman_contents = f'''# Do NOT touch this file.
+# This file will be overwritten on the next upgrade.
+
+[options]
+HoldPkg     = pacman glibc
+#XferCommand = /usr/bin/curl -L -C - -f -o %o %u
+#XferCommand = /usr/bin/wget --passive-ftp -c -O %o %u
+#CleanMethod = KeepInstalled
+Architecture = auto
+Color
+ParallelDownloads = 60
+ILoveCandy
+
+SigLevel = Required DatabaseOptional
+LocalFileSigLevel = Optional
+
+[core]
+SigLevel = PackageRequired
+Server=https://archive.archlinux.org/repos/{datetime.datetime.strftime(datetime.datetime.today() - datetime.timedelta(days=2), '%Y/%m/%d')}/$repo/os/$arch
+
+[extra]
+SigLevel = PackageRequired
+Server=https://archive.archlinux.org/repos/{datetime.datetime.strftime(datetime.datetime.today() - datetime.timedelta(days=2), '%Y/%m/%d')}/$repo/os/$arch
+'''
+
+with open(f'.brunch-tmp/pacman.conf', 'w') as build_pacman_file:
+    build_pacman_file.write(pacman_contents)
+    build_pacman_file.write(f'\n[breakfast]\nSigLevel = Never\nServer = file://{os.getcwd()}/packages-out')
+
+with open(f'.brunch-tmp/airootfs/etc/pacman.conf', 'w') as iso_pacman_file:
+    iso_pacman_file.write(pacman_contents)
+
+if sprofile['dm'] in ('gdm', 'sddm', 'lightdm'):
+    subprocess.call(
+        ['ln', '-sfn', f'/usr/lib/systemd/system/{sprofile["dm"]}.service', f'.brunch-tmp/airootfs/etc/systemd/system/display-manager.service'])
+
+if subprocess.call(
+    ['mkarchiso', '-v', '-w', 'workdir/', '-o', 'out/', '.'], cwd=".brunch-tmp", shell=False) != 0:
+    print('Build failed, attempting again.')
+
+    if subprocess.call(
+        ['mkarchiso', '-v', '-w', 'workdir/', '-o', 'out/', '.'], cwd=".brunch-tmp", shell=False) != 0:
+        print('Profile build failed.')
+        exit(100)
+
+current_timestamp = int(time.time())
+
+subprocess.run(['mkdir', '-p', f'out/{selected_profile_name}'])
+subprocess.run(['cp', '-r', f'.brunch-tmp/out', f'out/{selected_profile_name}/{int(time.time())}'], shell=False)
+
+print()
+print('=================')
+print('Successful build.')
+print()
+print(f'The resulting ISO can found in: ./out/{selected_profile_name}/{current_timestamp}')

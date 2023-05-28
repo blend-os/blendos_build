@@ -1,0 +1,3 @@
+#!/bin/bash
+
+echo 'Create an Ubuntu container from the blendOS Settings app.'

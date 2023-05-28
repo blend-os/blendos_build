@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<!DOCTYPE wallpapers SYSTEM "gnome-wp-list.dtd">
+<wallpapers>
+  <wallpaper deleted="false">
+    <name>blendOS Background</name>
+    <filename>/usr/local/share/backgrounds/blend/blend-light.png</filename>
+    <filename-dark>/usr/local/share/backgrounds/blend/blend-dark.png</filename-dark>
+    <options>zoom</options>
+    <shade_type>solid</shade_type>
+    <pcolor>#CA8DFD</pcolor>
+    <scolor>#000000</scolor>
+  </wallpaper>
+</wallpapers>
