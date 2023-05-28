@@ -17,18 +17,6 @@ dpkg_list = [
     'jade-gui'
 ]
 
-# blendOS independent packages
-
-iblend_list = [
-    'blend-inst',
-    'blend-keyring',
-    'filesystem-blend',
-    'grub-blend',
-    'lsb-release-blend',
-    'plymouth',
-    'waydroid-blend'
-]
-
 # AUR packages
 
 aur_list = [
@@ -42,9 +30,21 @@ aur_list = [
     'gnome-shell-extension-appindicator'
 ]
 
+# blendOS independent packages
+
+iblend_list = [
+    'blend-inst',
+    'blend-keyring',
+    'filesystem-blend',
+    'grub-blend',
+    'lsb-release-blend',
+    'plymouth',
+    'waydroid-blend'
+]
+
 # Combined independent package list
 
-ipkg_list = iblend_list + aur_list
+ipkg_list = aur_list + iblend_list
 
 # Complete package list
 
@@ -106,15 +106,15 @@ else:
 dpkg_list_building = []
 pkg_list_building = []
 
+for ipkg in ipkg_list:
+    if f'packages/{ipkg}' not in [x[0] for x in last_build_commits]:
+        last_build_commits.append((f'packages/{ipkg}', ''))
+
 for dpkg in dpkg_list:
     if f'projects/{dpkg}' not in [x[0] for x in last_build_commits]:
         last_build_commits.append((f'projects/{dpkg}', ''))
     if f'packages/{dpkg}' not in [x[0] for x in last_build_commits]:
         last_build_commits.append((f'packages/{dpkg}', ''))
-
-for ipkg in ipkg_list:
-    if f'packages/{ipkg}' not in [x[0] for x in last_build_commits]:
-        last_build_commits.append((f'packages/{ipkg}', ''))
 
 for path, id in last_build_commits:
     if latest_commits['commits'][path] != id:
