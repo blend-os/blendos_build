@@ -96,8 +96,10 @@ subprocess.run(['cp', '-r', 'build/base-profile', '.brunch-tmp'])
 with open(f'.brunch-tmp/packages.x86_64', 'a') as packages_file:
     packages_file.write('\n' + '\n'.join(sprofile["pkgs"]) + '\n')
 
+current_timestamp = int(time.time())
+
 with open(f'.brunch-tmp/airootfs/etc/blend_release', 'w') as blend_release_file:
-    blend_release_file.write(f'track: {selected_profile_name}\ncurrent: {int(time.time())}\nserver: {server_url}\n')
+    blend_release_file.write(f'track: {selected_profile_name}\ncurrent: {current_timestamp}\nserver: {server_url}\n')
 
 pacman_contents = f'''# Do NOT touch this file.
 # This file will be overwritten on the next upgrade.
@@ -144,10 +146,8 @@ if subprocess.call(
         print('Profile build failed.')
         exit(100)
 
-current_timestamp = int(time.time())
-
 subprocess.run(['mkdir', '-p', f'out/{selected_profile_name}'])
-subprocess.run(['cp', '-r', f'.brunch-tmp/out', f'out/{selected_profile_name}/{int(time.time())}'], shell=False)
+subprocess.run(['cp', '-r', f'.brunch-tmp/out', f'out/{selected_profile_name}/{current_timestamp}'], shell=False)
 
 print()
 print('=================')
