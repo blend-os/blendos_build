@@ -21,9 +21,9 @@ dpkg_list = [
 
 aur_list = [
     'adw-gtk3',
+    'libglibutil',
     'libgbinder',
     'python-gbinder',
-    'libglibutil',
     'waydroid-image',
     'gnome-shell-extension-dash-to-dock',
     'gnome-shell-extension-blur-my-shell',
