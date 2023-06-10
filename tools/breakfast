@@ -24,6 +24,7 @@ aur_list = [
     'libglibutil',
     'libgbinder',
     'python-gbinder',
+    'waydroid-blend',
     'waydroid-image',
     'gnome-shell-extension-dash-to-dock',
     'gnome-shell-extension-blur-my-shell',
@@ -38,8 +39,7 @@ iblend_list = [
     'filesystem-blend',
     'grub-blend',
     'lsb-release-blend',
-    'plymouth',
-    'waydroid-blend'
+    'plymouth'
 ]
 
 # Combined independent package list
