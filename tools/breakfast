@@ -7,6 +7,8 @@ import fileinput
 import subprocess
 import configparser
 
+import xml.etree.ElementTree as ET
+
 # Depedendent packages (depend on projects)
 
 dpkg_list = [
@@ -14,10 +16,14 @@ dpkg_list = [
     'blend',
     'blend-web-store',
     'blendos-first-setup',
-    'jade-gui'
+    'jade-gui',
+    'system'
 ]
 
 # AUR packages
+
+tree = ET.parse('.assemble/manifests/default.xml')
+root = tree.getroot()
 
 aur_list = [
     'adw-gtk3',
@@ -30,6 +36,11 @@ aur_list = [
     'gnome-shell-extension-blur-my-shell',
     'gnome-shell-extension-appindicator'
 ]
+
+for el in root.iter():
+    if el.tag == 'project' and el.attrib.get('remote') == 'aur':
+        if el.attrib['path'].replace('packages/', '') not in aur_list:
+            aur_list.append(el.attrib['path'].replace('packages/', ''))
 
 # blendOS independent packages
 
