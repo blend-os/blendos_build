@@ -99,6 +99,7 @@ flatpak
 blendos-first-setup-git
 blend-settings-git
 blend-web-store-git
+system-git
 
 # Fonts
 noto-fonts
