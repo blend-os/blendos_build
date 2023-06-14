@@ -119,6 +119,8 @@ networkmanager
 plymouth-blend
 
 # OS installation and tweaks
+arc-gtk-theme
+papirus-icon-theme
 filesystem-blend
 lsb-release-blend
 blend-inst-git

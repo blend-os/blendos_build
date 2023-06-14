@@ -13,10 +13,20 @@ color = (0.0, 0.0, 0.0, 0.36666667461395264)
 [org/gnome/desktop/background]
 picture-uri = 'file:///usr/local/share/backgrounds/blend/blend-light.png'
 picture-uri-dark = 'file:///usr/local/share/backgrounds/blend/blend-dark.png'
-show-desktop-icons = true   
+show-desktop-icons = true
+
+[org/cinnamon/desktop/background]
+picture-uri = 'file:///usr/local/share/backgrounds/blend/blend-light.png'
+
+[org/cinnamon/theme]
+name = 'Arc'
 
 [org/gnome/desktop/interface]
 gtk-theme = 'adw-gtk3'
+
+[org/cinnamon/desktop/interface]
+gtk-theme = 'Arc'
+icon-theme = 'Papirus'
 
 [org/gnome/desktop/wm/preferences]
 button-layout = ':minimize,maximize,close'
