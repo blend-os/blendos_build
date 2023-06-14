@@ -136,6 +136,7 @@ spice-vdagent
 # Other packages
 firefox
 cups
+wget
 cups-pk-helper
 open-vm-tools
 iio-sensor-proxy
