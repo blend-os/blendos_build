@@ -17,7 +17,7 @@ dpkg_list = [
     'blend-web-store',
     'blendos-first-setup',
     'jade-gui',
-    'system'
+    'system',
 ]
 
 # AUR packages
@@ -50,7 +50,8 @@ iblend_list = [
     'filesystem-blend',
     'grub-blend',
     'lsb-release-blend',
-    'plymouth'
+    'plymouth',
+    'zsync2'
 ]
 
 # Combined independent package list
