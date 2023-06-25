@@ -134,7 +134,7 @@ blend-keyring
 spice-vdagent
 
 # Other packages
-python-goject
+python-gobject
 firefox
 cups
 wget
