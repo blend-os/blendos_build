@@ -137,6 +137,13 @@ if sprofile['dm'] in ('gdm', 'sddm', 'lightdm'):
     subprocess.call(
         ['ln', '-sfn', f'/usr/lib/systemd/system/{sprofile["dm"]}.service', f'.brunch-tmp/airootfs/etc/systemd/system/display-manager.service'])
 
+if sprofile['dm'] == 'sddm':
+    with open(f'.brunch-tmp/airootfs/etc/sddm.conf.d/default.conf', 'w') as sddm_config_file:
+        sddm_config_file.write('[Autologin]\n')
+        sddm_config_file.write('User=blend\n')
+        sddm_config_file.write(f'Session={selected_profile_name}\n\n')
+        sddm_config_file.write('[Autologin]\nCurrent=breeze\n')
+
 if subprocess.call(
     ['mkarchiso', '-v', '-w', 'workdir/', '-o', 'out/', '.'], cwd=".brunch-tmp", shell=False) != 0:
     print('Build failed, attempting again.')
