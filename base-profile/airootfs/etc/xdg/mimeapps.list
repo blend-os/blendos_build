@@ -1,0 +1,13 @@
+[Default Applications]
+application/vnd.android.package-archive=blend-package-installer.desktop
+application/vnd.debian.binary-package=blend-package-installer.desktop
+application/x-redhat-package-manager=blend-package-installer.desktop
+application/x-rpm=blend-package-installer.desktop
+application/zstd=blend-package-installer.desktop
+
+[Added Associations]
+application/vnd.android.package-archive=blend-package-installer.desktop;
+application/vnd.debian.binary-package=blend-package-installer.desktop;
+application/x-redhat-package-manager=blend-package-installer.desktop;
+application/x-rpm=blend-package-installer.desktop;
+application/zstd=blend-package-installer.desktop;
