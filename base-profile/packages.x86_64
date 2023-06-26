@@ -141,3 +141,4 @@ wget
 cups-pk-helper
 open-vm-tools
 iio-sensor-proxy
+xorg-xhost
