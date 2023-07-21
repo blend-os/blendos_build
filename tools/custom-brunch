@@ -1,0 +1,119 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import time
+import shutil
+import datetime
+import subprocess
+
+import xml.etree.ElementTree as ET
+
+# Get list of profiles
+
+profiles = {}
+
+server_url = 'https://images.blendos.co'
+
+if not os.geteuid() == 0:
+    print('brunch must be run as root.')
+    exit(1)
+
+if not os.path.isfile('.assemble/manifests/default.xml'):
+    print('brunch must be run from the directory containing the Assemble repository.')
+    exit(1)
+
+if not os.path.isdir('packages-out'):
+    print('You must eat your breakfast first.')
+    exit(1)
+
+selected_profile_name = sys.argv[1]
+
+print(f'Building {selected_profile_name}.')
+print()
+
+sprofile = {
+    'dm': 'none',
+    'pkgs': sys.argv[2:],
+}
+
+if 'sddm' in sprofile['pkgs']:
+    sprofile['dm'] = 'sddm'
+elif 'gdm' in sprofile['pkgs']:
+    sprofile['dm'] = 'gdm'
+elif 'lightdm' in sprofile['pkgs']:
+    sprofile['dm'] = 'lightdm'
+
+if os.path.isdir(f".brunch-tmp"):
+    shutil.rmtree(f".brunch-tmp")
+
+subprocess.run(['cp', '-r', 'build/base-profile', '.brunch-tmp'])
+
+with open(f'.brunch-tmp/packages.x86_64', 'a') as packages_file:
+    packages_file.write('\n' + '\n'.join(sprofile["pkgs"]) + '\n')
+
+current_timestamp = int(time.time())
+
+with open(f'.brunch-tmp/airootfs/etc/blend_release', 'w') as blend_release_file:
+    blend_release_file.write(f'track: {selected_profile_name}\ncurrent: {current_timestamp}\nserver: {server_url}\n')
+
+pacman_contents = f'''# Do NOT touch this file.
+# This file will be overwritten on the next upgrade.
+
+[options]
+HoldPkg     = pacman glibc
+#XferCommand = /usr/bin/curl -L -C - -f -o %o %u
+#XferCommand = /usr/bin/wget --passive-ftp -c -O %o %u
+#CleanMethod = KeepInstalled
+Architecture = auto
+Color
+ParallelDownloads = 60
+ILoveCandy
+
+SigLevel = Required DatabaseOptional
+LocalFileSigLevel = Optional
+
+[core]
+SigLevel = PackageRequired
+Server=https://archive.archlinux.org/repos/{datetime.datetime.strftime(datetime.datetime.today() - datetime.timedelta(days=2), '%Y/%m/%d')}/$repo/os/$arch
+
+[extra]
+SigLevel = PackageRequired
+Server=https://archive.archlinux.org/repos/{datetime.datetime.strftime(datetime.datetime.today() - datetime.timedelta(days=2), '%Y/%m/%d')}/$repo/os/$arch
+'''
+
+with open(f'.brunch-tmp/pacman.conf', 'w') as build_pacman_file:
+    build_pacman_file.write(pacman_contents)
+    build_pacman_file.write(f'\n[breakfast]\nSigLevel = Never\nServer = file://{os.getcwd()}/packages-out')
+
+with open(f'.brunch-tmp/airootfs/etc/pacman.conf', 'w') as iso_pacman_file:
+    iso_pacman_file.write(pacman_contents)
+
+if sprofile['dm'] in ('gdm', 'sddm', 'lightdm'):
+    subprocess.call(
+        ['ln', '-sfn', f'/usr/lib/systemd/system/{sprofile["dm"]}.service', f'.brunch-tmp/airootfs/etc/systemd/system/display-manager.service'])
+
+if sprofile['dm'] == 'sddm':
+    with open(f'.brunch-tmp/airootfs/etc/sddm.conf.d/default.conf', 'w') as sddm_config_file:
+        sddm_config_file.write('[Autologin]\n')
+        sddm_config_file.write('User=blend\n')
+        sddm_config_file.write(f'Session={selected_profile_name}\n\n')
+        sddm_config_file.write('[Autologin]\nCurrent=breeze\n')
+
+if subprocess.call(
+    ['mkarchiso', '-v', '-w', 'workdir/', '-o', 'out/', '.'], cwd=".brunch-tmp", shell=False) != 0:
+    print('Build failed, attempting again.')
+
+    if subprocess.call(
+        ['mkarchiso', '-v', '-w', 'workdir/', '-o', 'out/', '.'], cwd=".brunch-tmp", shell=False) != 0:
+        print('Profile build failed.')
+        exit(100)
+
+subprocess.run(['mkdir', '-p', f'out/{selected_profile_name}'])
+subprocess.run(['cp', '-r', f'.brunch-tmp/out', f'out/{selected_profile_name}/{current_timestamp}'], shell=False)
+
+print()
+print('=================')
+print('Successful build.')
+print()
+print(f'The resulting ISO can found in: ./out/{selected_profile_name}/{current_timestamp}')
