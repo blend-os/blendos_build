@@ -55,7 +55,10 @@ with open(f'.brunch-tmp/packages.x86_64', 'a') as packages_file:
 current_timestamp = int(time.time())
 
 with open(f'.brunch-tmp/airootfs/etc/blend_release', 'w') as blend_release_file:
-    blend_release_file.write(f'track: {selected_profile_name}\ncurrent: {current_timestamp}\nserver: {server_url}\n')
+    blend_release_file.write(f'track: {selected_profile_name}\ncurrent: 0\nserver: custom\n')
+
+with open(f'.brunch-tmp/airootfs/.base_packages', 'w') as base_packages_file:
+    base_packages_file.write('\n'.join(sprofile['pkgs']))
 
 pacman_contents = f'''# Do NOT touch this file.
 # This file will be overwritten on the next upgrade.
