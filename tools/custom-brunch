@@ -44,6 +44,20 @@ elif 'gdm' in sprofile['pkgs']:
 elif 'lightdm' in sprofile['pkgs']:
     sprofile['dm'] = 'lightdm'
 
+subprocess.call(['sudo', 'pacman', '--config' 'build/base-profile/pacman.conf', '-Sy'])
+
+for pkg in sprofile['pkgs']:
+    if subprocess.call(['sudo', 'pacman', '--config' 'build/base-profile/pacman.conf', '-Si', pkg]) != 0:
+        et = ET.parse('.assemble/manifests/default.xml')
+
+        new_pkg = ET.SubElement(et.getroot(), 'project')
+        new_pkg.attrib['path'] = f'packages/{pkg}'
+        new_pkg.attrib['name'] = pkg
+        new_pkg.attrib['remote'] = 'aur'
+
+subprocess.call(['assemble', 'sync'])
+subprocess.call(['breakfast'])
+
 if os.path.isdir(f".brunch-tmp"):
     shutil.rmtree(f".brunch-tmp")
 
